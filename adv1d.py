@@ -52,6 +52,7 @@ def lagrangian(particle_coords, vel, dt, Conc, vol, dp, t_end, NN_idx, h):
                 num = num + 1
                 dw = kerDWendland(r,h)
                 concx = Conc[j] - Conc[i]
+
                 sign  = dr/r
                 test = concx * dp * dw  * sign
                 conc_temp += test
@@ -69,7 +70,7 @@ def main():
     pos_start = 0.2
     pos_end = 0.3
     dp = 0.001
-    t_end = 10
+    t_end = 1
     dt =0.01
     h = dp*8
     plot_state = True
@@ -104,7 +105,7 @@ def main():
     plt.plot(pos,concEul, label='Eul')
     plt.plot(pos,conc,'r^', markevery=20, label='t=0')
     plt.plot(pos,concLag, label='Lag')
-    plt.plot(pos,conc_d, 'g*', markevery=2,label='dc')
+    # plt.plot(pos,conc_d, 'g*', markevery=2,label='dc')
     plt.legend()
     # plt.ylim([-0.05,0.05])
     plt.grid()
