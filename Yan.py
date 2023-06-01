@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 
 #Creating a Function.
 def normal_dist(x , mean , sd):
-    prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
+    prob_density = 0.1/(sd*np.sqrt(2*np.pi)) * np.exp(-0.5*((x-mean)/sd)**2)
+    prob_density = prob_density/np.max(prob_density)
+    # prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
+
     return prob_density
 
 
@@ -97,7 +100,7 @@ def calcDC_SPH(particles, gradC_SPH, dC_SPH):
 NP = 500
 vx = 0.01
 xMin = 0.0
-xMax = 1.0
+xMax = 2.0
 CMin = 1.0
 CMax = 1.01
 CLeft = 0.0
@@ -106,7 +109,8 @@ h = 0.016
 
 
 tMin = 0.0
-tMax = 20.0
+tMax = 1
+# tMax = 20.0
 tNow = tMin
 dt = 1e-2
 dtLog = 0.25
@@ -118,14 +122,26 @@ dtLog = 0.25
 particles = np.empty(NP, dtype=object)
 posx = np.linspace(xMin, xMax, NP, dtype=float)
 Conc = np.full((NP), CMin, dtype=float)
+Conc = np.full((NP), CMin, dtype=float)
 # Conc[:int(NP*0.6)] = CMax
 # Conc[:int(NP*0.1)] = CMin
 # Conc = 0.5*(np.sin(6*posx)+1)
-Conc = normal_dist(posx , 0.5 , 0.08)
+for i in range(NP):
+    Conc[i] = math.exp(-((posx[i]-0.5)**2)/0.005)
+# Conc = normal_dist(posx , 0.5 , 0.1)
 
 
 for i in range(NP):
-    particles[i] = particle1D(posx[i],vx,Conc[i])
+
+    v = posx[i]*0.01
+    particles[i] = particle1D(posx[i],v,Conc[i])
+    # particles[i] = particle1D(posx[i],vx,Conc[i])
+
+# Plot the velocity of the particles
+vel_plot = np.array([part.vel for part in particles])
+plt.plot(posx,vel_plot)
+# plt.show()
+
 
 
 Ctemp_FD = np.zeros(NP)
@@ -147,23 +163,33 @@ while tNow <= tMax:
         Ctemp_SPH[i] = particles[i].C_SPH + dt*dC_SPH[i]
     for i in range(NP):
         x = 0
-        particles[i].setConc(x)
-        # particles[i].setConc(Ctemp_FD[i])
+        # particles[i].setConc(x)
+        particles[i].setConc(Ctemp_FD[i])
         particles[i].setConc_SPH(Ctemp_SPH[i])
     tNow += dt
     print("t="+"{:.6f}".format(tNow),"FD: "+"{:.6f}".format(np.array([part.C for part in particles]).sum()),"SPH:"+"{:.6f}".format(np.array([part.C_SPH for part in particles]).sum()))
     if abs(dt-(tNow % dtLog)) < 1e-8: #((tNow % dtLog) <= (dtLog/1e2)):
         partPos = np.array([part.x for part in particles])
-    #     partC_FD =  np.array([part.C for part in particles])
-    #     partC_SPH =  np.array([part.C_SPH for part in particles])
-    #     # print(partC_FD.sum()/NP)
-    #     fig = plt.figure()
-    #     plt.plot(partPos, partC_FD, "k:")
-    #     plt.plot(partPos, partC_SPH, "r^", markevery=5, fillstyle='none')
-    #     # plt.plot(partPos, dC_FD, "k:")
+        partC_FD =  np.array([part.C for part in particles])
+        partC_SPH =  np.array([part.C_SPH for part in particles])
+        # print(partC_FD.sum()/NP)
+        plt.clf()
+        plt.plot(partPos, partC_FD, "k:")
+        plt.plot(partPos, partC_SPH, "r^", markevery=5, fillstyle='none')
+        # plt.plot(partPos, dC_FD, "k:")
         plt.plot(partPos, dC_SPH, "r^", markevery=20, fillstyle='none')
-        plt.ylim([-0.05,0.30])
-        plt.savefig("test_"+ "{:.6f}".format(tNow) +".png",dpi=300)
-        current_fig = plt.gcf()
-        plt.close(current_fig)
+        # plt.ylim([-0.05,0.30])
+        plt.draw()
+        plt.pause(0.01)
+        # plt.savefig("test_"+ "{:.6f}".format(tNow) +".png",dpi=300)
+        # current_fig = plt.gcf()
+        # plt.close(current_fig)
+
+# plot the final concentration
+plt.clf()
+plt.plot(partPos, partC_FD, "k:")
+plt.plot(partPos, partC_SPH, "r^", markevery=5, fillstyle='none')
+plt.plot()
+plt.grid()
+plt.show()
 
