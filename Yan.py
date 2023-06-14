@@ -140,7 +140,7 @@ for i in range(NP):
 # Plot the velocity of the particles
 vel_plot = np.array([part.vel for part in particles])
 plt.plot(posx,vel_plot)
-# plt.show()
+plt.show()
 
 
 
@@ -184,6 +184,13 @@ while tNow <= tMax:
         # plt.savefig("test_"+ "{:.6f}".format(tNow) +".png",dpi=300)
         # current_fig = plt.gcf()
         # plt.close(current_fig)
+
+# make a new array with final fd concentration and position and save it to a csv
+partPos = np.array([part.x for part in particles])
+partC_FD =  np.array([part.C for part in particles])
+partC_SPH =  np.array([part.C_SPH for part in particles])
+np.savetxt("final_concentration.csv", np.column_stack((partPos, partC_FD, partC_SPH)), delimiter=",", header="Position, FD Concentration, SPH Concentration")
+
 
 # plot the final concentration
 plt.clf()
