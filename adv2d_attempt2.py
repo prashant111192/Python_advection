@@ -62,7 +62,7 @@ def main():
     dp = 0.002
 
     dt = 0.001
-    t_end = 100
+    t_end = 5
     if DIM ==1:
         h = dp*8
         boxsize = (2,dp)
@@ -118,8 +118,8 @@ def main():
         #     Conc_CD[i] = 1
         #     Conc_N_SPH[i] = 1
         #     Conc_N_CD[i] = 1
-        vel[i,0] = 0.01
-        vel[i,0] = (particle_coords[i,0]+0.01) * (0.001)
+        vel[i,0] = 0.05
+        # vel[i,0] = (particle_coords[i,0]+0.01) * (0.1)
         # vel[i,0] = math.exp(-((particle_coords[i,0]-(boxsize[0]/2))**2)/0.5)*0.01
     
     # volume of the particles
@@ -219,7 +219,24 @@ def main():
     print("Difference between initial and final concentration_SPH_N_SPH: ", np.sum(ConcOrig-Conc_N_SPH))
     print("Difference between initial and final concentration_SPH_N_UP: ", np.sum(ConcOrig-Conc_N_UP))
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [1, 1]})
+    print(Conc.shape)
+    print(particle_coords[:,0].shape)
+    # plt.clf()
+    # fig, ax = plt.subplots(1, 1)
+    # violin_plot = ax.violinplot(Conc, positions=particle_coords[:, 0], widths=0.1, showmedians=True)
+
+    # # Set the color of the violin plot based on concentration
+    # for pc, concentration in zip(violin_plot['bodies'], Conc):
+    #     pc.set_facecolor(plt.cm.viridis(concentration))
+
+    # ax.set_xlabel('Position')
+    # ax.set_ylabel('Concentration')
+    # ax.set_title('Concentration Distribution')
+    # ax.set_ylim(-0.01, 0.01)
+    # plt.colorbar(violin_plot['bodies'][0], label='Concentration')
+    # ax.grid()
+    # plt.tight_layout()
+    # plt.savefig("adv2d_vio_" + str(DIM) + ".png", dpi=300)
 
     plt.clf()
     fig, (ax1, ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [1, 1]})
