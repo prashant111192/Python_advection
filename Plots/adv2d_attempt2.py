@@ -119,10 +119,10 @@ def main():
         #     Conc_CD[i] = 1
         #     Conc_N_SPH[i] = 1
         #     Conc_N_CD[i] = 1
-        vel[i,0] = 0.07
+        # vel[i,0] = 0.7
         # vel[i,0] = (particle_coords[i,0]+0.01) * (0.1)
         # vel[i,0] = ((particle_coords[i,0]+5) * 0.01) 
-        # vel[i,0] = math.exp(-((particle_coords[i,0]-(boxsize[0]/2))**2)/0.08)*0.05
+        vel[i,0] = math.exp(-((particle_coords[i,0]-(boxsize[0]/2))**2)/0.08)*0.05
         # vel
     
     plt.clf()
