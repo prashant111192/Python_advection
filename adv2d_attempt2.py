@@ -330,3 +330,17 @@ if __name__ == '__main__':
 # https://askubuntu.com/questions/610903/how-can-i-create-a-video-file-from-a-set-of-jpg-images
 # ffmpeg -framerate 10 -i line_%00d.png -c:v libx264 -profile:v high -crf 20 -pix_fmt yuv420p output.mp4
 # 
+# time =  5.000 SPH:  -2.0179413695586845e-12 CD:  -3.922195901395753e-12 UP:  -3.922195901395753e-12
+# Difference between initial and final concentration_SPH:  -1.9124146710680634e-12
+# Difference between initial and final concentration_CD:  -3.803901638121943e-12
+# Difference between initial and final concentration_UP:  -3.803901638121943e-12
+# Difference between initial and final concentration_SPH_N_CD:  -4.3806624994147114e-13
+# Difference between initial and final concentration_SPH_N_SPH:  1.0795808691455022e-12
+# Difference between initial and final concentration_SPH_N_UP:  1.0825784713119901e-12
+# Difference between the peak position of Conc_NN)SPH and ConcOrig:  0.34500000000000003
+# Difference between the peak position of Conc_CD and ConcOrig:  0.35000000000000003
+# Difference between the peak position of Conc_N_CD and ConcOrig:  0.35000000000000003
+# Difference between the peak position of Conc_N_SPH and ConcOrig:  0.34500000000000003
+# Difference between the peak position of Conc_UP and ConcOrig:  0.35000000000000003
+# Difference between the peak position of Conc_N_UP and ConcOrig:  0.35000000000000003
+# Final position of the peak of Conc:  [0.845 0.   ]
