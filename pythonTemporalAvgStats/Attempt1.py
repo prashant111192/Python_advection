@@ -1,11 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
+from mpl_toolkits.mplot3d import Axes3D
 import scipy.interpolate as interp
 import scipy.spatial as spatial
 import sklearn.neighbors as NN
 import math
-import pyinterp
+# import pyinterp
 
 def shepards_method_all_parts(x, y, z, s, u, v, w, NN_idx, h):
     shepards = np.zeros(len(u))
@@ -28,7 +29,8 @@ def kernel_methods(x, y, z, s, u, v, w, p, N_idx, h):
     d = np.sqrt((x[N_idx]-u)**2 + (y[N_idx]-v)**2 + (z[N_idx]-w)**2)
     w_basic_shepards = 1/d**p
     w_basic_shepards = w_basic_shepards/np.sum(w_basic_shepards)
-    shepards = np.sum(w_basic_shepards*s[N_idx])
+    # print(w_basic_shepards)
+    shepards = np.sum(w_basic_shepards*s[N_idx])/np.sum(w_basic_shepards)
     
     q = d/h
     sigma_cs = 1/(math.pi*h**3)
@@ -96,7 +98,7 @@ def show_neighbours(NN_Idx, random_points, points, idx):
 
 
 def func(x, y, z):
-    temp = np.abs(np.sin(np.pi*x)*np.cos(np.pi*y)*z) +500
+    temp = np.abs(np.sin(np.pi*x)*np.cos(np.pi*y)*z)
     # temp = np.abs(np.sin(2*np.pi*x)*np.cos(2*np.pi*y)*z)
     # temp = np.sin(x+y)+np.cos(z+10)
     # temp = (np.sin(2*np.pi*x*y*z))
@@ -107,7 +109,7 @@ def func(x, y, z):
 def main():
 
     # number of points on 1 axis of the original data
-    num = 70
+    num = 30
     # number of points on 1 axis of the interpolated data
     interpolated_size = 1000
     np.random.seed(3274)
@@ -136,7 +138,7 @@ def main():
     print("h = ", h)
     nbrs = NN.NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(points)
     NN_idx = nbrs.radius_neighbors(random_points, radius=2*h, return_distance=False)
-    # show_neighbours(NN_idx, random_points, points, 1)
+    show_neighbours(NN_idx, random_points, points, 1)
 
     s_truth = func(u, v, w)
 
@@ -157,10 +159,10 @@ def main():
     interpolated_scalars_linear = interpolated_fx_linear((u, v, w))
     del(interpolated_fx_linear)
 
-    print('Nearest Interpolation')
-    interpolated_fx_nearest = interp.NearestNDInterpolator((points[:,0], points[:,1], points[:,2]), s)
-    interpolated_scalars_nearest = interpolated_fx_nearest((u, v, w))
-    del(interpolated_fx_nearest)
+    # print('Nearest Interpolation')
+    # interpolated_fx_nearest = interp.NearestNDInterpolator((points[:,0], points[:,1], points[:,2]), s)
+    # interpolated_scalars_nearest = interpolated_fx_nearest((u, v, w))
+    # del(interpolated_fx_nearest)
     
     print('Shepards Interpolation')
     # test_arr = shepards_method_all_parts(points[:,0], points[:,1], points[:,2], s, u, v, w, NN_idx)
@@ -193,13 +195,13 @@ def main():
     plt.title('Linear Interpolation')
     plt.savefig('linear.png')
 
-    plt.clf()
-    fig = plt.figure(figsize = (16, 9))
-    ax = plt.axes(projection ="3d")
-    sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_nearest, alpha=0.5, s = 50,cmap='viridis')
-    plt.colorbar(sctt, ax=ax)
-    plt.title('Nearest Interpolation')
-    plt.savefig('nearest.png')
+    # plt.clf()
+    # fig = plt.figure(figsize = (16, 9))
+    # ax = plt.axes(projection ="3d")
+    # sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_nearest, alpha=0.5, s = 50,cmap='viridis')
+    # plt.colorbar(sctt, ax=ax)
+    # plt.title('Nearest Interpolation')
+    # plt.savefig('nearest.png')
 
     # plt.clf()
     # fig = plt.figure(figsize = (16, 9))
@@ -249,13 +251,13 @@ def main():
     plt.colorbar(sctt, ax=ax)
     plt.savefig('diff_linear.png')
 
-    plt.clf()
-    fig = plt.figure(figsize = (16, 9))
-    ax = plt.axes(projection ="3d")
-    sctt = ax.scatter3D(u, v,w, c=(interpolated_scalars_nearest-s_truth)/s_truth, s = 50, alpha=0.5, cmap='viridis')
-    plt.title('Difference Nearest Interpolation')
-    plt.colorbar(sctt, ax=ax)
-    plt.savefig('diff_nearest.png')
+    # plt.clf()
+    # fig = plt.figure(figsize = (16, 9))
+    # ax = plt.axes(projection ="3d")
+    # sctt = ax.scatter3D(u, v,w, c=(interpolated_scalars_nearest-s_truth)/s_truth, s = 50, alpha=0.5, cmap='viridis')
+    # plt.title('Difference Nearest Interpolation')
+    # plt.colorbar(sctt, ax=ax)
+    # plt.savefig('diff_nearest.png')
 
     # plt.clf()
     # fig = plt.figure(figsize = (16, 9))
@@ -303,11 +305,11 @@ def main():
     print('Maximum error for Linear: ',np.max(temp))
     print('Mean error for Linear: ',np.mean(temp))
 
-    temp = np.abs((interpolated_scalars_nearest-s_truth)/s_truth)
-    temp = temp[~np.isnan(temp)]
-    box = np.vstack((box, temp))
-    print('Maximum error for Nearest: ',np.max(temp))
-    print('Mean error for Nearest: ',np.mean(temp))
+    # temp = np.abs((interpolated_scalars_nearest-s_truth)/s_truth)
+    # temp = temp[~np.isnan(temp)]
+    # box = np.vstack((box, temp))
+    # print('Maximum error for Nearest: ',np.max(temp))
+    # print('Mean error for Nearest: ',np.mean(temp))
     
     temp = np.abs((interpolated_scalars_shepards-s_truth)/s_truth)
     temp = temp[~np.isnan(temp)]
@@ -335,7 +337,8 @@ def main():
 
     plt.clf()
     plt.yscale('log')
-    plt.boxplot(box.T, labels=['Linear', 'Nearest', 'Shepards', 'Cubic Spline', 'Gaussian', 'Quintic Spline'])
+    plt.boxplot(box.T, labels=['Linear', 'Shepards', 'Cubic Spline', 'Gaussian', 'Quintic Spline'])
+    # plt.boxplot(box.T, labels=['Linear', 'Nearest', 'Shepards', 'Cubic Spline', 'Gaussian', 'Quintic Spline'])
     plt.grid()
     plt.title('Error Boxplot')
     plt.savefig('boxplot.png')
