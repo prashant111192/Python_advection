@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
@@ -10,6 +11,7 @@ import math
 
 def shepards_method_all_parts(x, y, z, s, u, v, w, NN_idx, h):
     shepards = np.zeros(len(u))
+    shepards_gms = np.zeros(len(u))
     cs = np.zeros(len(u))
     gaussian = np.zeros(len(u))
     qs = np.zeros(len(u))
@@ -17,8 +19,8 @@ def shepards_method_all_parts(x, y, z, s, u, v, w, NN_idx, h):
     # p for shepards method
     p = 3
     for i in range(len(u)):
-        shepards[i], cs[i], gaussian[i], qs[i] = kernel_methods(x, y, z, s, u[i], v[i], w[i], p, NN_idx[i], h)
-    return shepards, cs, gaussian, qs
+        shepards[i],shepards_gms[i], cs[i], gaussian[i], qs[i] = kernel_methods(x, y, z, s, u[i], v[i], w[i], p, NN_idx[i], h)
+    return shepards, shepards_gms, cs, gaussian, qs
 
 def kernel_methods(x, y, z, s, u, v, w, p, N_idx, h):
     # x, y, z are the points we know
@@ -31,6 +33,10 @@ def kernel_methods(x, y, z, s, u, v, w, p, N_idx, h):
     w_basic_shepards = w_basic_shepards/np.sum(w_basic_shepards)
     # print(w_basic_shepards)
     shepards = np.sum(w_basic_shepards*s[N_idx])/np.sum(w_basic_shepards)
+    max_d = np.max(d)
+    w_gms_shepards = ((max_d-d)/(max_d*d))**2
+    w_gms_shepards = w_gms_shepards/np.sum(w_gms_shepards)
+    shepards_gms = np.sum(w_gms_shepards*s[N_idx])
     
     q = d/h
     sigma_cs = 1/(math.pi*h**3)
@@ -75,30 +81,35 @@ def kernel_methods(x, y, z, s, u, v, w, p, N_idx, h):
 
 
     # return xx_return
-    return shepards, cs, gaussian, qs
+    return shepards, shepards_gms, cs, gaussian, qs
 
 def show_neighbours(NN_Idx, random_points, points, idx):
     fig = plt.figure(figsize = (16, 9))
     ax = plt.axes(projection ="3d")
     ui = np.zeros((len(NN_Idx[idx]),3))
-    print(np.shape(ui))
+    print(np.shape(random_points))
     for i in range(len(NN_Idx[idx])):
         temp = NN_Idx[idx][i]
         ui[i] = points[temp]
-    #     print(i)
-    sctt = ax.scatter3D(random_points[0,idx], random_points[1,idx], random_points[2,idx], c= "r", alpha=1)
+    sctt = ax.scatter3D(random_points[idx,0], random_points[idx,1], random_points[idx,2], c= "r", alpha=1)
     sctt2 = ax.scatter3D(ui[:,0], ui[:,1], ui[:,2], alpha=.5)
-    # sctt = ax.scatter3D(random_points[0,idx], random_points[1,idx], random_points[2,idx], c= "r", alpha=.3)
-    # sctt2 = ax.scatter3D(points[0,NN_Idx[idx]], points[1, NN_Idx[idx]], points[2,NN_Idx[idx]], alpha=.3)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.title('Nearest Neighbours')
+    ax.set_xlim(0,1)
+    ax.set_ylim(0,1)
+    ax.set_zlim(0,1)
     
     plt.savefig('NN_area.png')
+    # plt.show()
     plt.clf()
-    exit()
+    # exit()
 
 
 
 def func(x, y, z):
-    temp = np.abs(np.sin(np.pi*x)*np.cos(np.pi*y)*z)
+    temp = np.abs(np.sin(np.pi*x)*np.cos(np.pi*y)*z*1000)
     # temp = np.abs(np.sin(2*np.pi*x)*np.cos(2*np.pi*y)*z)
     # temp = np.sin(x+y)+np.cos(z+10)
     # temp = (np.sin(2*np.pi*x*y*z))
@@ -109,7 +120,7 @@ def func(x, y, z):
 def main():
 
     # number of points on 1 axis of the original data
-    num = 30
+    num = 40
     # number of points on 1 axis of the interpolated data
     interpolated_size = 1000
     np.random.seed(3274)
@@ -134,11 +145,13 @@ def main():
     random_points = np.array([u, v, w]).T
     
     kd_tree = spatial.KDTree(points)
-    h = (box_max-0)*2/num
+    h = (box_max-0)/num
     print("h = ", h)
     nbrs = NN.NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(points)
     NN_idx = nbrs.radius_neighbors(random_points, radius=2*h, return_distance=False)
-    show_neighbours(NN_idx, random_points, points, 1)
+    print(np.shape(NN_idx))
+    print(NN_idx[100])
+    show_neighbours(NN_idx, random_points, points, random.randint(0,interpolated_size))
 
     s_truth = func(u, v, w)
 
@@ -165,10 +178,7 @@ def main():
     # del(interpolated_fx_nearest)
     
     print('Shepards Interpolation')
-    # test_arr = shepards_method_all_parts(points[:,0], points[:,1], points[:,2], s, u, v, w, NN_idx)
-    # interpolated_scalar_shepards = test_arr[0]
-    # interpolated_scalars_shepards = test_arr[1]
-    interpolated_scalars_shepards, interpolated_scalars_cs, interpolated_scalars_gaussian, interpolated_scalars_qs = shepards_method_all_parts(points[:,0], points[:,1], points[:,2], s, u, v, w, NN_idx, h)
+    interpolated_scalars_shepards,interpolated_scalars_shepards_gms, interpolated_scalars_cs, interpolated_scalars_gaussian, interpolated_scalars_qs = shepards_method_all_parts(points[:,0], points[:,1], points[:,2], s, u, v, w, NN_idx, h)
 
     # print('Regular Interpolation')
     # interpolated_fx_regular = interp.RegularGridInterpolator((points[:,0](), Y.flatten(), Z.flatten()), s)
@@ -222,6 +232,14 @@ def main():
     plt.clf()
     fig = plt.figure(figsize = (16, 9))
     ax = plt.axes(projection ="3d")
+    sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_shepards_gms, alpha=0.5, s=50,cmap='viridis')
+    plt.colorbar(sctt, ax=ax)
+    plt.title('Shepards GMS Interpolation')
+    plt.savefig('shepards_gms.png')
+
+    plt.clf()
+    fig = plt.figure(figsize = (16, 9))
+    ax = plt.axes(projection ="3d")
     sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_cs, alpha=0.5, s=50,cmap='viridis')
     plt.colorbar(sctt, ax=ax)
     plt.title('Cubic Spline Interpolation')
@@ -246,10 +264,15 @@ def main():
     plt.clf()
     fig = plt.figure(figsize = (16, 9))
     ax = plt.axes(projection ="3d")
-    sctt = ax.scatter3D(u, v,w, c=(interpolated_scalars_linear-s_truth)/s_truth, s=50,alpha=0.5, cmap='viridis')
+    temp = (interpolated_scalars_linear-s_truth)/s_truth
+    sctt = ax.scatter3D(u, v,w, c=temp, s=50,alpha=0.5, cmap='viridis')
     plt.title('Difference Linear Interpolation')
     plt.colorbar(sctt, ax=ax)
     plt.savefig('diff_linear.png')
+    plt.clf()
+    plt.hist(temp, bins=100)
+    plt.savefig('hist_linear.png')
+
 
     # plt.clf()
     # fig = plt.figure(figsize = (16, 9))
@@ -270,34 +293,62 @@ def main():
     plt.clf()
     fig = plt.figure(figsize = (16, 9))
     ax = plt.axes(projection ="3d")
-    sctt = ax.scatter3D(u, v,w, c=(interpolated_scalars_shepards-s_truth)/s_truth, s = 50,alpha=0.5, cmap='viridis')
+    temp = (interpolated_scalars_shepards-s_truth)/s_truth
+    sctt = ax.scatter3D(u, v,w, c=temp,  s = 50,alpha=0.5, cmap='viridis')
     plt.title('Difference Shepards Interpolation')
     plt.colorbar(sctt, ax=ax)
     plt.savefig('diff_shepards.png')
+    plt.clf()
+    plt.hist(temp, bins=100)
+    plt.savefig('hist_shepards.png')
 
     plt.clf()
     fig = plt.figure(figsize = (16, 9))
     ax = plt.axes(projection ="3d")
-    sctt = ax.scatter3D(u, v,w, c=(interpolated_scalars_cs-s_truth)/s_truth, s = 50,alpha=0.5, cmap='viridis')
+    temp = (interpolated_scalars_shepards_gms-s_truth)/s_truth
+    sctt = ax.scatter3D(u, v,w, c=temp, s = 50,alpha=0.5, cmap='viridis')
+    plt.title('Difference Shepards GMS Interpolation')
+    plt.colorbar(sctt, ax=ax)
+    plt.savefig('diff_shepards_gsm.png')
+    plt.clf()
+    plt.hist(temp, bins=100)
+    plt.savefig('hist_shepards_gms.png')
+
+    plt.clf()
+    fig = plt.figure(figsize = (16, 9))
+    ax = plt.axes(projection ="3d")
+    temp = (interpolated_scalars_cs-s_truth)/s_truth
+    sctt = ax.scatter3D(u, v,w, c=temp, s = 50,alpha=0.5, cmap='viridis')
     plt.title('Difference Cubic Spline Interpolation')
     plt.colorbar(sctt, ax=ax)
     plt.savefig('diff_cubic_spline.png')
+    plt.clf()
+    plt.hist(temp, bins=100)
+    plt.savefig('hist_cubic_spline.png')
 
     plt.clf()
     fig = plt.figure(figsize = (16, 9))
     ax = plt.axes(projection ="3d")
-    sctt = ax.scatter3D(u, v,w, c=(interpolated_scalars_gaussian-s_truth)/s_truth, s = 50,alpha=0.5, cmap='viridis')
+    temp = (interpolated_scalars_gaussian-s_truth)/s_truth
+    sctt = ax.scatter3D(u, v,w, c=temp, s = 50,alpha=0.5, cmap='viridis')
     plt.title('Difference Gaussian Interpolation')
     plt.colorbar(sctt, ax=ax)
     plt.savefig('diff_gaussian.png')
+    plt.clf()
+    plt.hist(temp, bins=100)
+    plt.savefig('hist_gaussian.png')
 
     plt.clf()
     fig = plt.figure(figsize = (16, 9))
     ax = plt.axes(projection ="3d")
-    sctt = ax.scatter3D(u, v,w, c=(interpolated_scalars_qs-s_truth)/s_truth, s = 50,alpha=0.5, cmap='viridis')
+    temp = (interpolated_scalars_qs-s_truth)/s_truth
+    sctt = ax.scatter3D(u, v,w, c=temp, s = 50,alpha=0.5, cmap='viridis')
     plt.title('Difference Quintic Spline Interpolation')
     plt.colorbar(sctt, ax=ax)
     plt.savefig('diff_quintic_spline.png')
+    plt.clf()
+    plt.hist(temp, bins=100)
+    plt.savefig('hist_quintic_spline.png')
 
     temp =  np.abs((interpolated_scalars_linear-s_truth)/s_truth)
     temp = temp[~np.isnan(temp)]
@@ -316,28 +367,41 @@ def main():
     box = np.vstack((box, temp))
     print('Maximum error for Shepards: ',np.max(temp))
     print('Mean error for Shepards: ',np.mean(temp))
+    print('Median error for Shepards: ',np.median(temp))
+
+    temp = np.abs((interpolated_scalars_shepards_gms-s_truth)/s_truth)
+    temp = temp[~np.isnan(temp)]
+    box = np.vstack((box, temp))
+    print('Maximum error for Shepards GMS: ',np.max(temp))
+    print('Mean error for Shepards GMS: ',np.mean(temp))
+    print('Median error for Shepards GMS: ',np.median(temp))
+
 
     temp = np.abs((interpolated_scalars_cs-s_truth)/s_truth)
     temp = temp[~np.isnan(temp)]
     box = np.vstack((box, temp))
     print('Maximum error for Cubic Spline: ',np.max(temp))
     print('Mean error for Cubic Spline: ',np.mean(temp))
+    print('Median error for Cubic Spline: ',np.median(temp))
 
     temp = np.abs((interpolated_scalars_gaussian-s_truth)/s_truth)
     temp = temp[~np.isnan(temp)]
     box = np.vstack((box, temp))
     print('Maximum error for Gaussian: ',np.max(temp))
     print('Mean error for Gaussian: ',np.mean(temp))
+    print('Median error for Gaussian: ',np.median(temp))
+
 
     temp = np.abs((interpolated_scalars_qs-s_truth)/s_truth)
     temp = temp[~np.isnan(temp)]
     box = np.vstack((box, temp))
     print('Maximum error for Quintic Spline: ',np.max(temp))
     print('Mean error for Quintic Spline: ',np.mean(temp))
+    print('Median error for Quintic Spline: ',np.median(temp))
 
     plt.clf()
     plt.yscale('log')
-    plt.boxplot(box.T, labels=['Linear', 'Shepards', 'Cubic Spline', 'Gaussian', 'Quintic Spline'])
+    plt.boxplot(box.T, labels=['Linear', 'Shepards', 'Shepards_gms', 'Cubic Spline', 'Gaussian', 'Quintic Spline'])
     # plt.boxplot(box.T, labels=['Linear', 'Nearest', 'Shepards', 'Cubic Spline', 'Gaussian', 'Quintic Spline'])
     plt.grid()
     plt.title('Error Boxplot')
