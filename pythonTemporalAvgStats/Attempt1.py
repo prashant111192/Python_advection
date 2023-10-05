@@ -9,14 +9,16 @@ import sklearn.neighbors as NN
 import math
 # import pyinterp
 
+#initialiation parameters
+path_to_data = './data/'
+path_to_plot = './plots/'
+
 def shepards_method_all_parts(x, y, z, s, u, v, w, NN_idx, h):
     shepards = np.zeros(len(u))
     shepards_gms = np.zeros(len(u))
     cs = np.zeros(len(u))
     gaussian = np.zeros(len(u))
     qs = np.zeros(len(u))
-    # shepards = np.zeros((len(u),2))
-    # p for shepards method
     p = 3
     for i in range(len(u)):
         shepards[i],shepards_gms[i], cs[i], gaussian[i], qs[i] = kernel_methods(x, y, z, s, u[i], v[i], w[i], p, NN_idx[i], h)
@@ -31,7 +33,6 @@ def kernel_methods(x, y, z, s, u, v, w, p, N_idx, h):
     d = np.sqrt((x[N_idx]-u)**2 + (y[N_idx]-v)**2 + (z[N_idx]-w)**2)
     w_basic_shepards = 1/d**p
     w_basic_shepards = w_basic_shepards/np.sum(w_basic_shepards)
-    # print(w_basic_shepards)
     shepards = np.sum(w_basic_shepards*s[N_idx])/np.sum(w_basic_shepards)
     max_d = np.max(d)
     w_gms_shepards = ((max_d-d)/(max_d*d))**2
@@ -43,13 +44,11 @@ def kernel_methods(x, y, z, s, u, v, w, p, N_idx, h):
     sigma_gaussian = 1/(math.pi**(3/2)*h**3)
     sigma_qs = 1/(120*math.pi*h**3)
 
-
     w_kernel_cs = np.zeros(len(N_idx))
     w_kernel_gaussian = np.zeros(len(N_idx))
     w_kernel_qs = np.zeros(len(N_idx))
     for i in range(len(N_idx)):
 
-        # Cubclic Spline Kernel
         if q[i] <= 1:
             w_kernel_cs[i] = sigma_cs*(1-(3/2)*(q[i]**2)*(1-(q[i]/2)))
             w_kernel_gaussian[i] = sigma_gaussian*(math.exp(-(q[i]**2)))
@@ -93,11 +92,8 @@ def show_neighbours(NN_Idx, random_points, points, idx):
     ax.set_xlim(0,1)
     ax.set_ylim(0,1)
     ax.set_zlim(0,1)
-    
-    plt.savefig('NN_area.png')
+    plt.savefig(path_to_plot+'NN_area.png')
     plt.clf()
-
-
 
 def func(x, y, z):
     temp = np.abs(x+y+z) + np.sin(np.pi*x*y*z) + 1
@@ -111,7 +107,6 @@ def func(x, y, z):
     return temp,temp2
 
 def create_domain(num, box_max, seed):
-    # np.random.seed(3274)
     np.random.seed(seed)
     x = np.linspace(0, box_max, num)
     x = np.sort(x)
@@ -122,9 +117,23 @@ def create_domain(num, box_max, seed):
     X, Y, Z = np.meshgrid(x, y, z)
     return (X,Y,Z)
 
+def readDSPHdata(filename):
+    # Pos.x[m];Pos.y[m];Pos.z[m];Idp;Vel.x[m/s];Vel.y[m/s];Vel.z[m/s];Rhop[kg/m^3];Type;Mk;
+
+    data = np.loadtxt(filename, delimiter=';', skiprows=4)
+    pos = data[:,0:3]
+    idp = data[:,3]
+    vel = data[:,4:7]
+    density = data[:,7]
+    typeMk = data[:,8:10]
+
+    return data
+
+
+
 def main():
 
-    Print_graphs = False
+    print_graphs = False
     # number of points on 1 axis of the original data
     min_size = 10
     max_size = 100
@@ -165,22 +174,21 @@ def main():
             sctt = ax.scatter3D(u,v,w,alpha = 0.5, c = s_truth, s=50)
             fig.colorbar(sctt, ax=ax)
             plt.title('Random Points')
-            plt.savefig('random_points.png')
+            plt.savefig(path_to_plot+'random_points.png')
             plt.clf()
             fig = plt.figure(figsize = (16, 9))
             ax = plt.axes(projection ="3d")
             sctt = ax.scatter3D(X, Y,Z,alpha = 0.5, c=s,  cmap='viridis')
             fig.colorbar(sctt, ax=ax)
             plt.title('Actual Data')
-            plt.savefig('actual_data.png')
+            plt.savefig(path_to_plot+'actual_data.png')
             plt.clf()
             fig = plt.figure(figsize = (16, 9))
             ax = plt.axes(projection ="3d")
             sctt = ax.scatter3D(X, Y,Z,alpha = 0.5, c=s_rel,  cmap='viridis')
             fig.colorbar(sctt, ax=ax)
             plt.title('Linear/Nonlinear Element')
-            plt.savefig('actual_data_rel.png')
-            # exit()
+            plt.savefig(path_to_plot+'actual_data_rel.png')
 
             print('Linear Interpolation')
             interpolated_fx_linear  = interp.LinearNDInterpolator((points[:,0], points[:,1], points[:,2]), s)
@@ -202,14 +210,14 @@ def main():
             temp_cs = (interpolated_scalars_cs-s_truth)/s_truth
             temp_gaussian = (interpolated_scalars_gaussian-s_truth)/s_truth
             temp_qs = (interpolated_scalars_qs-s_truth)/s_truth
-            if(Print_graphs):
+            if(print_graphs):
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
                 ax = plt.axes(projection ="3d")
                 sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_linear, alpha=0.5,s=50, cmap='viridis')
                 plt.colorbar(sctt, ax=ax)
                 plt.title('Linear Interpolation')
-                plt.savefig('linear.png')
+                plt.savefig(path_to_plot+'linear.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -217,7 +225,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_nearest, alpha=0.5, s = 50,cmap='viridis')
                 plt.colorbar(sctt, ax=ax)
                 plt.title('Nearest Interpolation')
-                plt.savefig('nearest.png')
+                plt.savefig(path_to_plot+'nearest.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -225,7 +233,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_shepards, alpha=0.5, s=50,cmap='viridis')
                 plt.colorbar(sctt, ax=ax)
                 plt.title('Shepards Interpolation')
-                plt.savefig('shepards.png')
+                plt.savefig(path_to_plot+'shepards.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -233,7 +241,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_shepards_gms, alpha=0.5, s=50,cmap='viridis')
                 plt.colorbar(sctt, ax=ax)
                 plt.title('Shepards GMS Interpolation')
-                plt.savefig('shepards_gms.png')
+                plt.savefig(path_to_plot+'shepards_gms.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -241,7 +249,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_cs, alpha=0.5, s=50,cmap='viridis')
                 plt.colorbar(sctt, ax=ax)
                 plt.title('Cubic Spline Interpolation')
-                plt.savefig('cubic_spline.png')
+                plt.savefig(path_to_plot+'cubic_spline.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -249,7 +257,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_gaussian, alpha=0.5, s=50,cmap='viridis')
                 plt.colorbar(sctt, ax=ax)
                 plt.title('Gaussian Interpolation')
-                plt.savefig('gaussian.png')
+                plt.savefig(path_to_plot+'gaussian.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -257,7 +265,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=interpolated_scalars_qs, alpha=0.5, s=50,cmap='viridis')
                 plt.colorbar(sctt, ax=ax)
                 plt.title('Quintic Spline Interpolation')
-                plt.savefig('quintic.png')
+                plt.savefig(path_to_plot+'quintic.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -265,7 +273,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=temp_linear, s=50,alpha=0.5, cmap='viridis')
                 plt.title('Difference Linear Interpolation')
                 plt.colorbar(sctt, ax=ax)
-                plt.savefig('diff_linear.png')
+                plt.savefig(path_to_plot+'diff_linear.png')
 
 
                 plt.clf()
@@ -274,7 +282,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=temp_nearest, s = 50, alpha=0.5, cmap='viridis')
                 plt.title('Difference Nearest Interpolation')
                 plt.colorbar(sctt, ax=ax)
-                plt.savefig('diff_nearest.png')
+                plt.savefig(path_to_plot+'diff_nearest.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -282,7 +290,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=temp_shepards,  s = 50,alpha=0.5, cmap='viridis')
                 plt.title('Difference Shepards Interpolation')
                 plt.colorbar(sctt, ax=ax)
-                plt.savefig('diff_shepards.png')
+                plt.savefig(path_to_plot+'diff_shepards.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -290,7 +298,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=temp_shepardsgms, s = 50,alpha=0.5, cmap='viridis')
                 plt.title('Difference Shepards GMS Interpolation')
                 plt.colorbar(sctt, ax=ax)
-                plt.savefig('diff_shepards_gsm.png')
+                plt.savefig(path_to_plot+'diff_shepards_gsm.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -298,7 +306,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=temp_cs, s = 50,alpha=0.5, cmap='viridis')
                 plt.title('Difference Cubic Spline Interpolation')
                 plt.colorbar(sctt, ax=ax)
-                plt.savefig('diff_cubic_spline.png')
+                plt.savefig(path_to_plot+'diff_cubic_spline.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -306,7 +314,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=temp_gaussian, s = 50,alpha=0.5, cmap='viridis')
                 plt.title('Difference Gaussian Interpolation')
                 plt.colorbar(sctt, ax=ax)
-                plt.savefig('diff_gaussian.png')
+                plt.savefig(path_to_plot+'diff_gaussian.png')
 
                 plt.clf()
                 fig = plt.figure(figsize = (16, 9))
@@ -314,7 +322,7 @@ def main():
                 sctt = ax.scatter3D(u, v,w, c=temp_qs, s = 50,alpha=0.5, cmap='viridis')
                 plt.title('Difference Quintic Spline Interpolation')
                 plt.colorbar(sctt, ax=ax)
-                plt.savefig('diff_quintic_spline.png')
+                plt.savefig(path_to_plot+'diff_quintic_spline.png')
 
 
             # Combine all datasets into a list
@@ -337,7 +345,7 @@ def main():
             # Adjust layout and save the plot
             plt.tight_layout()
             plt.subplots_adjust(top=0.85)  # Adjust the title position
-            plt.savefig('hist_subplots'+str(domain_size[i])+'.png')
+            plt.savefig(path_to_plot+'hist_subplots'+str(domain_size[i])+'.png')
 
             print('Name \t\t Max \t\t Mean \t\t Median \t\t StdDev')
             temp =  ((interpolated_scalars_linear-s_truth)/s_truth)
@@ -390,13 +398,6 @@ def main():
             error = np.vstack((error, temp2))
             print('Quintic \t {:.5f} \t {:.5f} \t {:.5f} \t\t {:.5f}'.format(np.max(temp), np.mean(temp),np.median(temp),np.std(temp)))
 
-            # plt.clf()
-            # # plt.yscale('log')
-            # plt.boxplot(box.T, labels=['Linear', 'Nearest', 'Shepards', 'Shepards_gms', 'Cubic Spline', 'Gaussian', 'Quintic Spline'])
-            # plt.grid()
-            # plt.title('Error Boxplot: '+str(domain_size[i]))
-            # plt.savefig('boxplot_'+str(domain_size[i])+'.png')
-
             i = i+1
             error_stats.append(error)
         error_stats = np.array(error_stats)
@@ -404,8 +405,6 @@ def main():
         
     complete_error_stats = np.array(complete_error_stats)
     error_stats = np.mean(complete_error_stats, axis=0)
-
-
 
     plt.clf()
     rounded_domain_size = (int)(round(len(domain_size)/2, ndigits=0))
@@ -433,12 +432,7 @@ def main():
     # Adjust layout and save the plot
     plt.tight_layout()
     plt.subplots_adjust(top=0.85)  # Adjust the title position
-    plt.savefig('Error_stats.png')
-    
-    # np.savecsv('error_stats.csv', error_stats, delimiter=',', fmt='%f')
-
-
-
+    plt.savefig(path_to_plot+'Error_stats.png')
 
 if __name__ == '__main__':
     main()
