@@ -78,6 +78,7 @@ def kernel_methods(x, y, z, s, u, v, w, p, N_idx, h):
     return shepards, shepards_gms, cs, gaussian, qs
 
 def show_neighbours(NN_Idx, random_points, points, idx):
+    print('show_nn')
     fig = plt.figure(figsize = (16, 9))
     ax = plt.axes(projection ="3d")
     ui = np.zeros((len(NN_Idx[idx]),3))
@@ -156,16 +157,17 @@ def main():
         file = files[i]
         data = readDSPHdata(file)
         tree = spatial.KDTree(data[:,0:3])
-        h = 0.1
+        h = 0.005196
         nbrs = NN.NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(data[:,0:3])
         NN_idx = nbrs.radius_neighbors(data_last[:,0:3], radius=2*h, return_distance=False)
+
         show_neighbours(NN_idx, data_last[:,0:3], data[:,0:3], 100)
         
         vel_mag = np.sqrt(data[:,4]**2+data[:,5]**2+data[:,6]**2)
-        print('Linear Interpolation')
-        interpolated_fx_linear  = interp.LinearNDInterpolator((data[:,0], data[:,1], data[:,2]), vel_mag)
-        liner_vel_mag = interpolated_fx_linear((data_last[:,0], data_last[:,1], data_last[:,2]))
-        del(interpolated_fx_linear)
+        # print('Linear Interpolation')
+        # interpolated_fx_linear  = interp.LinearNDInterpolator((data[:,0], data[:,1], data[:,2]), vel_mag)
+        # liner_vel_mag = interpolated_fx_linear((data_last[:,0], data_last[:,1], data_last[:,2]))
+        # del(interpolated_fx_linear)
 
         print('Nearest Interpolation')
         interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), vel_mag)
@@ -175,7 +177,7 @@ def main():
         print('Shepards Interpolation')
         shepards_vel_mag, shepards_vel_mag_gms, cs_vel_mag, gaussian_vel_mag, qs_vel_mag = shepards_method_all_parts(data[:,0], data[:,1], data[:,2], vel_mag, data_last[:,0], data_last[:,1], data_last[:,2], NN_idx, h)
 
-        vel_avg = vel_avg + np.vstack((liner_vel_mag, nearest_vel_mag, shepards_vel_mag, shepards_vel_mag_gms, cs_vel_mag, gaussian_vel_mag, qs_vel_mag))/len(files)
+        vel_avg = vel_avg + np.vstack((nearest_vel_mag, shepards_vel_mag, shepards_vel_mag_gms, cs_vel_mag, gaussian_vel_mag, qs_vel_mag))/len(files)
         
 
         
@@ -213,6 +215,14 @@ def main():
     plt.title('Cubic Spline Interpolation')
     plt.savefig(path_to_plot+'cs.png')
 
+
+    # plt.clf()
+    # fig = plt.figure(figsize = (16, 9))
+    # ax = plt.axes(projection ="3d")
+    # sctt = ax.scatter3D(data_last[:,0], data_last[:,1], data_last[:,2], c=cs_vel_mag, alpha=0.5, s=5,cmap='viridis')
+    # plt.colorbar(sctt, ax=ax)
+    # plt.title('Cubic Spline Interpolation')
+    # plt.savefig(path_to_plot+'cs.png')
 
     plt.clf()
     fig = plt.figure(figsize = (16, 9))
