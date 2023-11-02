@@ -1,3 +1,5 @@
+# :/run/user/1000/gvfs/sftp:host=titan-c815/data0/prashant/LabScaleDigesters/CHADPaperSims/results/GCh4Out$ 
+
 from pyevtk.hl import pointsToVTK
 import os
 import numpy as np
@@ -132,17 +134,18 @@ def readDSPHdata(filename):
     # Pos.x[m];Pos.y[m];Pos.z[m];Idp;Vel.x[m/s];Vel.y[m/s];Vel.z[m/s];Rhop[kg/m^3];Type;Mk;
 
     data = np.loadtxt(path_to_data+filename, delimiter=';', skiprows=4, usecols=(0,1,2,3,4,5,6,7,8,9))
-    mask = data[:,8]==3
-    data = data[mask]
-    print(np.shape(data))
-    
-    pos = data[:,0:3]
-    idp = data[:,3]
-    vel = data[:,4:7]
-    density = data[:,7]
-    typeMk = data[:,8:10]
 
-    return data
+    mask_fluid = data[:,8]==3
+    data_fluid = data[mask_fluid]
+    data_other = data[~mask_fluid]
+
+    pos_fluid = data_fluid[:,0:3]
+    idp_fluid = data_fluid[:,3]
+    vel_fluid = data_fluid[:,4:7]
+    density_fluid = data_fluid[:,7]
+    typeMk_fluid = data_fluid[:,8:10]
+
+    return data_fluid, data_other
 
 
 def list_file_names():
@@ -156,7 +159,7 @@ def main():
     files = list_file_names()
     # print(files)
 
-    data_last = readDSPHdata(files[len(files)-1])
+    data_last, data_last_others = readDSPHdata(files[len(files)-1])
     # print(data_last)
     density_last = data_last[:,7]
     mag = np.sqrt(data_last[:,4]**2+data_last[:,5]**2+data_last[:,6]**2)/len(files)
@@ -172,7 +175,7 @@ def main():
     # for i in range(1):
     for i in range(len(files)-1):
         file = files[i]
-        data = readDSPHdata(file)
+        data, data_others = readDSPHdata(file)
         tree = spatial.KDTree(data[:,0:3])
         # h =5.656854e-05
         h = 0.005196
@@ -229,6 +232,7 @@ def main():
     np.save(path_to_output+'vel_avg.npy', vel_avg)
     np.save(path_to_output+'v_mag_interpolated_avg.npy', v_mag_interpolated_avg)
     np.save(path_to_output+'positions.npy', data_last)
+    data_last = vel_avg
 
     error = vel_avg- v_mag_interpolated_avg
     error_rel = error/vel_avg
@@ -254,7 +258,6 @@ def main():
     plt.subplots_adjust(top=0.85)  # Adjust the title position
 
     pointsToVTK('./VTK/vel_avg', data_last[:,0], data_last[:,1], data_last[:,2], data = {'vel_avg': mag*len(files),
-    # })
                                                                                          'nearest_vel_mag': nearest_vel_mag,
                                                                                          'shepards_vel_mag': shepards_vel_mag,
                                                                                          'shepards_vel_mag_gms': shepards_vel_mag_gms,
@@ -338,14 +341,6 @@ def main():
     plt.title('Avgerage Velocity')
     plt.savefig(path_to_plot+'vel_avg.png')
 
-
-
-
-
-
-
-    
-    
 
 
 if __name__ == '__main__':
