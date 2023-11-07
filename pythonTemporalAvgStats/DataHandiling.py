@@ -130,8 +130,10 @@ def create_domain(num, box_max, seed):
     X, Y, Z = np.meshgrid(x, y, z)
     return (X,Y,Z)
 
-def readDSPHdata(filename):
-    # Pos.x[m];Pos.y[m];Pos.z[m];Idp;Vel.x[m/s];Vel.y[m/s];Vel.z[m/s];Rhop[kg/m^3];Type;Mk;
+def readDSPHdata(filename, is_first):
+    if is_first:
+        line4 = np.loadtxt(path_to_data+filename, max_rows=3, dtype=str)
+        is_first = False
 
     data = np.loadtxt(path_to_data+filename, delimiter=';', skiprows=4, usecols=(0,1,2,3,4,5,6,7,8,9))
 
@@ -154,12 +156,14 @@ def list_file_names():
     files.sort()
     return files
 
+line4 = []
 def main():
 
+    is_first = True
     files = list_file_names()
     # print(files)
 
-    data_last, data_last_others = readDSPHdata(files[len(files)-1])
+    data_last, data_last_others = readDSPHdata(files[len(files)-1], is_first)
     # print(data_last)
     density_last = data_last[:,7]
     mag = np.sqrt(data_last[:,4]**2+data_last[:,5]**2+data_last[:,6]**2)/len(files)
@@ -175,7 +179,7 @@ def main():
     # for i in range(1):
     for i in range(len(files)-1):
         file = files[i]
-        data, data_others = readDSPHdata(file)
+        data, data_others = readDSPHdata(file, is_first)
         tree = spatial.KDTree(data[:,0:3])
         # h =5.656854e-05
         h = 0.005196
@@ -190,26 +194,26 @@ def main():
         current_v_y = data[:,5]
         current_v_z = data[:,6]
 
-        print('Nearest Interpolation')
-        interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), vel_mag)
-        nearest_vel_mag = interpolated_fx_nearest((data_last[:,0], data_last[:,1], data_last[:,2]))
-        del(interpolated_fx_nearest)
+        # print('Nearest Interpolation')
+        # interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), vel_mag)
+        # nearest_vel_mag = interpolated_fx_nearest((data_last[:,0], data_last[:,1], data_last[:,2]))
+        # del(interpolated_fx_nearest)
 
-        interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), v_x)
-        nearest_v_x = interpolated_fx_nearest((data_last[:,0], data_last[:,1], data_last[:,2]))
-        del(interpolated_fx_nearest)
+        # interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), v_x)
+        # nearest_v_x = interpolated_fx_nearest((data_last[:,0], data_last[:,1], data_last[:,2]))
+        # del(interpolated_fx_nearest)
 
-        interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), v_y)
-        nearest_v_y = interpolated_fx_nearest((data_last[:,0], data_last[:,1], data_last[:,2]))
-        del(interpolated_fx_nearest)
+        # interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), v_y)
+        # nearest_v_y = interpolated_fx_nearest((data_last[:,0], data_last[:,1], data_last[:,2]))
+        # del(interpolated_fx_nearest)
 
-        interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), v_z)
-        nearest_v_z = interpolated_fx_nearest((data_last[:,0], data_last[:,1], data_last[:,2]))
-        del(interpolated_fx_nearest)
+        # interpolated_fx_nearest = interp.NearestNDInterpolator((data[:,0], data[:,1], data[:,2]), v_z)
+        # nearest_v_z = interpolated_fx_nearest((data_last[:,0], data_last[:,1], data_last[:,2]))
+        # del(interpolated_fx_nearest)
 
         print('Shepards Interpolation')
-        shepards_vel_mag, shepards_vel_mag_gms, cs_vel_mag, gaussian_vel_mag, qs_vel_mag = shepards_method_all_parts(data[:,0], data[:,1], data[:,2], vel_mag, data_last[:,0], data_last[:,1], data_last[:,2], NN_idx, h)
-        vel_avg = vel_avg + np.vstack((nearest_vel_mag, shepards_vel_mag, shepards_vel_mag_gms, cs_vel_mag, gaussian_vel_mag, qs_vel_mag))/len(files)
+        # shepards_vel_mag, shepards_vel_mag_gms, cs_vel_mag, gaussian_vel_mag, qs_vel_mag = shepards_method_all_parts(data[:,0], data[:,1], data[:,2], vel_mag, data_last[:,0], data_last[:,1], data_last[:,2], NN_idx, h)
+        # vel_avg = vel_avg + np.vstack((nearest_vel_mag, shepards_vel_mag, shepards_vel_mag_gms, cs_vel_mag, gaussian_vel_mag, qs_vel_mag))/len(files)
 
         shepards_v_x, shepards_v_x_gms, cs_v_x, gaussian_v_x, qs_v_x = shepards_method_all_parts(data[:,0], data[:,1], data[:,2], current_v_x, data_last[:,0], data_last[:,1], data_last[:,2], NN_idx, h)
         v_x_avg = v_x_avg+ np.vstack((nearest_v_x, shepards_v_x, shepards_v_x_gms, cs_v_x, gaussian_v_x, qs_v_x))/len(files)
